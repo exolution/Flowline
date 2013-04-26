@@ -8,12 +8,12 @@
 //Flowline 流水线同步/异步执行模型
 ;var Flowline=function (window,undefined) {
     var _flowList = [],//执行队列（回调列表）
-        ptr = 0,//执行队列指针
-        listening=0,
-        lastResult,
+        _ptr = 0,//执行队列指针
+        _listening=0,
+        _lastResult,
         _context={},
         //默认的统一错误处理函数 抛出异常让系统处理
-        failHandler=function(e){
+        _failHandler=function(e){
             if(e instanceof Error){
                 throw e;
             }
@@ -26,18 +26,18 @@
              * 添加统一的错误处理函数
              * */
             fail: function (fn) {
-                failHandler = fn;
-                if(listening==2){
-                    listening=0;
-                    this.reject.apply(this,lastResult);
+                _failHandler = fn;
+                if(_listening==2){
+                    _listening=0;
+                    this.reject.apply(this,_lastResult);
                 }
             },
             /**
              * 执行后续流水线过程 并传递参数
              * */
             resolve: function () {
-                if (ptr < _flowList.length) {
-                    var flow = _flowList[ptr++],
+                if (_ptr < _flowList.length) {
+                    var flow = _flowList[_ptr++],
                         ret;
                     if (flow && flow.done != undefined) {
                         if (typeof flow.done == "function") {
@@ -56,16 +56,16 @@
                     }
                 }
                 else {
-                    listening=1;
-                    lastResult=Array.prototype.slice.call(arguments);
+                    _listening=1;
+                    _lastResult=Array.prototype.slice.call(arguments);
                 }
             },
             /**
              * 不推荐使用 因为这个我用的少没测过。。。。
              * */
             resolveWith: function (withThis) {
-                if (ptr < _flowList.length) {
-                    var flow = _flowList[ptr++],
+                if (_ptr < _flowList.length) {
+                    var flow = _flowList[_ptr++],
                         ret;
                     if (flow && flow.done != undefined) {
 
@@ -87,28 +87,28 @@
                     }
                 }
                 else{
-                    listening=1;
-                    lastResult=Array.prototype.slice.call(arguments);
+                    _listening=1;
+                    _lastResult=Array.prototype.slice.call(arguments);
                 }
             },
             reject: function () {
-                if (ptr < _flowList.length) {
-                    var flow = _flowList[ptr++];
+                if (_ptr < _flowList.length) {
+                    var flow = _flowList[_ptr++];
                     if (flow) {
                         if (typeof flow.fail == "function") {
                             flow.fail.apply(this,arguments);
                         }
-                        else if (failHandler != undefined) {
-                            failHandler.apply(this, arguments);
+                        else if (_failHandler != undefined) {
+                            _failHandler.apply(this, arguments);
                         }
                     }
                 }
-                else if(failHandler!=undefined){
-                    failHandler.apply(this, arguments);
+                else if(_failHandler!=undefined){
+                    _failHandler.apply(this, arguments);
                 }
                 else {
-                    listening=2;
-                    lastResult=Array.prototype.slice.call(arguments);
+                    _listening=2;
+                    _lastResult=Array.prototype.slice.call(arguments);
                 }
 
             },
@@ -116,9 +116,9 @@
              * 恢复一个错误继续沿着流水线执行链走。待验证是否有应用场景
              * */
             resume: function () {
-                ptr--;
-                if (ptr < 0) {
-                    ptr = 0;
+                _ptr--;
+                if (_ptr < 0) {
+                    _ptr = 0;
                 }
                 this.resolve.apply(this, arguments);
             },
@@ -135,13 +135,13 @@
                 else {
                     _flowList.push({done: done});
                 }
-                if(listening==1){
-                    listening=0;
-                    this.resolve.apply(this,lastResult);
+                if(_listening==1){
+                    _listening=0;
+                    this.resolve.apply(this,_lastResult);
                 }
-                if(listening==2&&fail!=undefined){
-                    listening=0;
-                    this.reject.apply(this,lastResult);
+                if(_listening==2&&fail!=undefined){
+                    _listening=0;
+                    this.reject.apply(this,_lastResult);
                 }
                 return this;
             }
@@ -160,7 +160,7 @@
     var Flowline = function () {
         var l=arguments.length;
         if(l>0){
-            ptr=0;
+            _ptr=0;
             _flowline.length=0;
             for (var i = 0; i < arguments.length; i++) {
                 _flowline.then(arguments[i]);
@@ -202,11 +202,12 @@
      * */
     Flowline.after=function(fn){
         var self=arguments.callee.caller;
-        _flowList.splice(ptr,0,{done:fn},{done:self});
+        _flowList.splice(_ptr,0,{done:fn},{done:self});
         _flowline.resolve.apply(_flowline, Array.prototype.slice.call(arguments,1));
     };
     Flowline.reset=function(){
-        ptr=_flowList.length=0;
+        _ptr=_flowList.length=0;
+        _listening=0;
     }
     Flowline.set=function(name,value){
         _context[name]=value;
