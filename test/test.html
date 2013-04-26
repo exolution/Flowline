@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html lang="ru">
+<head>
+    <title></title>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <script type="text/javascript" src="../src/flowline.js"></script>
+    <style type="text/css">
+        .lcd{
+            font-size:22px;
+            font-family: 'consolas','mocaco';
+            background: lightskyblue;
+        }
+    </style>
+</head>
+<body>
+<button id="test1">test case-1</button>
+<button id="test2">test case-2</button>
+<div class='lcd' id="text"></div>
+</body>
+
+<script type="text/javascript">
+
+    function executeDump(){
+        var raw=Object.prototype.toString,
+            self=arguments.callee,
+            caller=self.caller,
+            tick= 0,
+            now=+new Date(),
+            lcd=document.getElementById('text');
+        Object.prototype.toString=function(){
+            return JSON.stringify(this);
+        }
+        isNaN(self.tick)&&(self.tick=now);
+        tick=now-self.tick;
+        lcd.innerHTML=lcd.innerHTML+tick+'ms >execute function:'+arguments.callee.caller.name+' arguments:【'+Array.prototype.slice.call(arguments.callee.caller.arguments).join(',')+'】<br/>';
+        Object.prototype.toString=raw;
+
+    }
+    function asyncFn1(a){
+        executeDump();
+        setTimeout(function(){
+            Flowline.resolve(a,3);
+        },2000);
+        return Flowline.promise();
+    }
+    function asyncFn2(a,b){
+        executeDump();
+        setTimeout(function(){
+            Flowline.resolve(a+b);
+        },1000);
+        return Flowline.promise();
+    }
+    function syncFn1(data){
+        if(data==undefined){
+            Flowline.after(asyncFn2,1,2);
+        }
+        else {
+            if(isNaN(data)){
+                Flowline.reject(JSON.stringify(data)+' not a number',true);
+            }
+            else {
+                Flowline.resolve(data*2)
+            }
+        }
+        return Flowline.promise();
+    }
+    function syncFn2(){
+        executeDump();
+        return 1;
+    }
+    function syncFn3(data){
+        executeDump();
+        return data/3;
+    }
+    function errorHandler(msg,save){
+        var lcd=document.getElementById('text');
+        lcd.innerHTML=lcd.innerHTML+'<font color="red">error:'+msg+'</font><br>'
+        if(save) {
+            lcd.innerHTML+='<font color="blue">resume from a error</font><br>';
+            Flowline.resume();
+
+        }
+    }
+
+    //var fl=Flowline(yb1,tb2,tb1);.then(tb2).then(yb2);
+    // yb2().then(tb2);
+    document.getElementById('test1').onclick=function(){
+        document.getElementById('text').innerHTML="";
+        delete executeDump.tick;
+        Flowline.reset();
+        asyncFn1('a').then(syncFn1).then(syncFn3).then(syncFn2).fail(errorHandler);
+
+    }
+    document.getElementById('test2').onclick=function(){
+        document.getElementById('text').innerHTML="";
+        delete executeDump.tick;
+        Flowline.reset();
+        Flowline(syncFn2).then(asyncFn1).then(syncFn3).then(asyncFn2,errorHandler);
+    }
+
+</script>
+</html>
