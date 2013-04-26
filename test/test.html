@@ -3,7 +3,7 @@
 <head>
     <title></title>
     <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
-    <script type="text/javascript" src="../src/flowline.js"></script>
+    <script type="text/javascript" src="flowline.js"></script>
     <style type="text/css">
         .lcd{
             font-size:22px;
@@ -19,7 +19,7 @@
 </body>
 
 <script type="text/javascript">
-
+    //打印函数的执行情况和参数 
     function executeDump(){
         var raw=Object.prototype.toString,
             self=arguments.callee,
@@ -82,8 +82,7 @@
         }
     }
 
-    //var fl=Flowline(yb1,tb2,tb1);.then(tb2).then(yb2);
-    // yb2().then(tb2);
+    
     document.getElementById('test1').onclick=function(){
         document.getElementById('text').innerHTML="";
         delete executeDump.tick;
