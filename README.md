@@ -1,3 +1,8 @@
+几百年前的蹩脚的Promise实现 已弃坑
+最新的Promise实现 请看
+[https://github.com/exolution/IPromise]
+
+
 #Flowline流水线
 ###基于Promise模式的异步编程工具
 <hr/>
